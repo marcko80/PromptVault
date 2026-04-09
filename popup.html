@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>PromptVault</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- ── HEADER ── -->
+  <header>
+    <div class="logo">
+      <div class="logo-hex">⬡</div>
+      <span class="logo-text">Prompt<b>Vault</b></span>
+    </div>
+    <div class="header-right">
+      <span class="platform-pill" id="platform-pill"></span>
+      <button class="icon-btn" id="btn-add" title="Nuovo prompt">＋</button>
+      <button class="icon-btn" id="btn-settings" title="Impostazioni">⚙</button>
+    </div>
+  </header>
+
+  <!-- ── VIEW: LIST ── -->
+  <div id="view-list" class="view active">
+
+    <div class="search-wrap">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Cerca per titolo, tag, contenuto…"
+               autocomplete="off" spellcheck="false">
+        <span class="search-count" id="search-count"></span>
+      </div>
+    </div>
+
+    <!-- Filtro modello AI -->
+    <div class="filter-scroll">
+      <div class="chips" id="filter-model-chips">
+        <button class="chip active" data-model="all">✦ Tutti i modelli</button>
+        <button class="chip" data-model="claude">Claude</button>
+        <button class="chip" data-model="chatgpt">ChatGPT</button>
+        <button class="chip" data-model="gemini">Gemini</button>
+        <button class="chip" data-model="perplexity">Perplexity</button>
+        <button class="chip" data-model="mistral">Mistral</button>
+      </div>
+    </div>
+
+    <!-- Filtro categoria (dinamico) -->
+    <div class="filter-scroll" id="cat-filter-wrap" style="padding-top:0">
+      <div class="chips" id="filter-cat-chips">
+        <!-- popolato da JS -->
+      </div>
+    </div>
+
+    <div id="prompt-list" class="prompt-list"></div>
+
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-icon">📭</div>
+      <p>Nessun prompt trovato.</p>
+      <button class="btn-primary" id="btn-add-first"
+              style="max-width:180px;margin:0 auto;display:block;">
+        + Crea il primo prompt
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ── VIEW: FORM (Add / Edit) ── -->
+  <div id="view-form" class="view">
+
+    <div class="view-header">
+      <button class="back-btn" id="btn-back-form">← Indietro</button>
+      <h2 id="form-title">Nuovo Prompt</h2>
+    </div>
+
+    <div class="form-body">
+
+      <div class="field">
+        <label>Titolo *</label>
+        <input type="text" id="f-title" placeholder="Es. Email di follow-up commerciale" maxlength="80">
+      </div>
+
+      <div class="field">
+        <label>Prompt *</label>
+        <textarea id="f-content" rows="7"
+          placeholder="Scrivi il tuo prompt…&#10;Usa [VARIABILE] come segnaposto."></textarea>
+        <div class="char-hint" id="char-hint">0 caratteri</div>
+      </div>
+
+      <div class="field">
+        <label>Descrizione breve</label>
+        <input type="text" id="f-description"
+               placeholder="A cosa serve? (opzionale)" maxlength="100">
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Modello AI</label>
+          <select id="f-model">
+            <option value="all">Tutti i modelli</option>
+            <option value="claude">Claude</option>
+            <option value="chatgpt">ChatGPT</option>
+            <option value="gemini">Gemini</option>
+            <option value="perplexity">Perplexity</option>
+            <option value="mistral">Mistral</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Categoria</label>
+          <!-- datalist popolato dinamicamente con le categorie esistenti -->
+          <input type="text" id="f-category"
+                 placeholder="Es. Marketing"
+                 list="category-list" maxlength="40" autocomplete="off">
+          <datalist id="category-list"></datalist>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tag (separati da virgola)</label>
+        <input type="text" id="f-tags" placeholder="email, follow-up, vendite">
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-secondary" id="btn-cancel-form">Annulla</button>
+        <button class="btn-primary"   id="btn-save-form">💾 Salva prompt</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── VIEW: SETTINGS ── -->
+  <div id="view-settings" class="view">
+
+    <div class="view-header">
+      <button class="back-btn" id="btn-back-settings">← Indietro</button>
+      <h2>Impostazioni</h2>
+    </div>
+
+    <div class="settings-body">
+
+      <div class="settings-section">
+        <h3>Statistiche</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-num" id="stat-total">0</span>
+            <span class="stat-label">Prompt salvati</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="stat-used">0</span>
+            <span class="stat-label">Utilizzi totali</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="stat-cats">0</span>
+            <span class="stat-label">Categorie</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gestione categorie -->
+      <div class="settings-section">
+        <h3>Gestisci Categorie</h3>
+        <div id="cat-manager-list" class="cat-manager-list">
+          <!-- popolato da JS -->
+        </div>
+        <div class="cat-add-row">
+          <input type="text" id="new-cat-input" placeholder="Nome nuova categoria…" maxlength="40">
+          <button class="btn-accent-sm" id="btn-add-cat">+ Aggiungi</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Importa / Esporta</h3>
+        <button class="btn-outline" id="btn-export">
+          <span>⬇</span> Esporta tutti i prompt (JSON)
+        </button>
+        <button class="btn-outline" id="btn-import">
+          <span>⬆</span> Importa prompt da file JSON
+        </button>
+        <input type="file" id="import-file" accept=".json" style="display:none">
+      </div>
+
+      <div class="settings-section">
+        <h3>Piattaforme supportate</h3>
+        <div class="about-block">
+          <p>Iniezione automatica su:<br>
+             <strong>Claude · ChatGPT · Gemini · Perplexity · Mistral</strong></p>
+          <div class="version">PromptVault v1.1.0 — Manifest V3</div>
+        </div>
+      </div>
+
+      <div class="settings-section danger">
+        <h3>Zona Pericolosa</h3>
+        <button class="btn-danger" id="btn-clear-all">
+          <span>🗑</span> Elimina tutti i prompt
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
